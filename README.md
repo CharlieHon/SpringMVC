@@ -135,5 +135,123 @@ public class UserServlet {
 
 ## @RequestMapping
 
-1. 
+- `@RequestMapping`注解可以指定控制器/处理器的某个方法的请求的url
 
+### 修饰类和方法
+
+- `@RequestMapping`注解可以修饰房啊，也可以修饰类。当同时修饰类和方法时，请求的url就是组合
+  `/类请求值/方法请求值`
+
+```java
+package com.charlie.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+@RequestMapping(value = "/user")
+@Controller
+public class UserHandler {
+
+    /*
+    1. method=RequestMethod.POST：表示请求buy目标方法必须是 post
+    2. RequestMethod 四个常用选项 POST, GET, PUT, DELETE
+    3. SpringMVC 控制器默认支持 GET 和 POST 两种方式，即指定method时，GET和POST方法都可以
+    4. buy() 方法请求的url：http://localhost:8080/工程路径/user/buy
+    5. @PostMapping (value = "/buy") 等价于 把 method=RequestMethod.POST 的 @RequestMapping 方法
+     */
+    //@RequestMapping(value = "/buy", method = RequestMethod.POST)
+    @PostMapping (value = "/buy")
+    public String buy() {
+        System.out.println("购买商品");
+        return "success";
+    }
+}
+```
+
+### 指定请求方式
+
+1. `@RequestMapping`可以指定请求的方式(`post/get/put/delete`)，请求的方式需要和指定的一样，否则报错
+2. `SpringMVC`控制器默认支持 `GET` 和 `POST` 两种方式，即当不指定 `method` 时，可以接收 `GET` 和 `POST` 请求
+3. ![img_4.png](img_4.png)
+
+### 指定 params 和 headers 支持简单表达式
+
+```
+ /*
+ 1. params = "bookId" 表示请求该目标方法时，必须给一个bookId参数，值没有限定
+ 2. search(String bookId)：表示请求目标方法时，携带的bookId=100，就会将请求携带的bookId对应的值100
+     ，赋值给 String bookId
+ 3. params = "bookId=100" 表示参数bookId的值必须为100，否则会报错
+  */
+ @RequestMapping(value = "/find", params = "bookId=100", method = RequestMethod.GET)
+ public String search(String bookId) {
+     System.out.println("查询数据 bookId=" + bookId);
+     return "success";
+ }
+```
+
+1. `params="bookId"`：表示请求必须包含名为 `bookId` 的请求参数
+2. `params!="param1"`：表示请求不能包含名为 `param1` 的请求参数
+3. `params = "bookId=100"`：表示请求包含名为 `bookId` 的请求参数，且其值必须为 `100`
+4. ![请求参数](img_5.png)
+
+### 支持Ant风格资源地址
+
+1. `?`：匹配文件名的一个字符
+2. `*`：匹配文件名中的任意字符
+3. `**`：匹配多层路径
+4. ![Ant风格的url地址举例](img_6.png)
+
+```
+ /*
+ 1. 需求：可以配置 /user/message/aa, /user/message/aa/bb/cc
+ 2. @RequestMapping(value = "/message/**") /** 表示可以匹配多层路径
+  */
+ @RequestMapping(value = "/message/**")
+ public String im() {
+     System.out.println("发送消息...");
+     return "success";
+ }
+```
+
+### 路径参数
+
+1. `@RequestMapping`可以配合 `@PathVariable` 映射url绑定的占位符
+2. 这样就可以**不需要在url地址上带参数名**了，更加简洁明了
+
+```html
+<h1>占位符的演示</h1>
+<a href="user/reg/charlie/21">占位符演示</a>
+```
+
+```java
+package com.charlie.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+@RequestMapping(value = "/user")
+@Controller
+public class UserHandler {
+   /*
+   1. 要求：希望目标方法获取到 username 和 userId, value="/xx/{username}".@PathVariable("username")
+   2. 前端页面：<a href="user/reg/kristina/300">占位符演示</a>
+   3. value = "/reg/{username}/{userId}" 表示 charlie->{username} 21->{userId}
+   4. @PathVariable("username") 需要与路径变量名 {username} 匹配，传入的参数名 String name 可以自定义
+   */
+   @RequestMapping(value = "/reg/{username}/{userId}")
+   public String register(@PathVariable("username") String name, @PathVariable("userId") String id) {
+      System.out.println("接收到参数：username=" + name + "，userId=" + id);
+      return "success";
+   }
+}
+```
+
+### 注意事项和使用细节
+
+1. 映射的url，不能重复
+   - ![映射的URL不能重复](img_7.png)
+2. 各种请求的简写形式，下面的 `value=` 也可以省略
+   - ![img_8.png](img_8.png)
+3. 当我们确定表单或者超链接会提交某个字段数据比如(email)时，要求提交的参数名和目标方法的参数名保持一致
+   - ![img_9.png](img_9.png)

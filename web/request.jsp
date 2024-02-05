@@ -23,5 +23,14 @@
 
 <hr/><h1>占位符的演示</h1>
 <a href="user/reg/charlie/12">占位符的演示</a>
+
+<%--练习：编写一个表单, 以Post提交Computer信息, 后端编写ComputerHandler, 可以接收到信息--%>
+<hr/><h1>电脑信息</h1><br/>
+<form action="computer/message" method="post">
+    品牌：<input type="text" name="brand"><br/>
+    价格：<input type="text" name="price"><br/>
+    数量：<input type="text" name="amount"><br/>
+    <button type="submit">提交</button>
+</form>
 </body>
 </html>
