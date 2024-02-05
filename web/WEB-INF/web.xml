@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+    <!--web配置文件-->
+
+    <!--配置前端控制器/中央控制器/分发控制器
+    1. 用户的请求都会经过它的处理
+    -->
+    <servlet>
+        <servlet-name>springDispatcherServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <!--配置属性 contextConfigLocation，指定 DispatcherServlet 操作的spring配置文件
+        1. 如果没有配置 contextConfigLocation属性
+        2. 默认按照这样的位置去定位spring配置文件：WEB-INF/springDispatcherServlet-servlet.xml
+        -->
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:applicationContext_mvc.xml</param-value>
+        </init-param>
+        <!--在web项目启动时，就自动加载 DispatcherServlet 对象-->
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>springDispatcherServlet</servlet-name>
+        <!--说明
+        1) 这里配置的url-pattern是 / ，表示用户的请求都经过 DispatcherServlet
+        2) 这样配置也支持 rest 风格的url请求
+        -->
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+</web-app>
