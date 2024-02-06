@@ -5,6 +5,19 @@
          version="4.0">
     <!--web配置文件-->
 
+    <!--配置HiddenHttpMethodFilter过滤器
+    1. 作用：把以POST方式提交的delete/put请求进行转换
+    2. 配置 url-pattern 为 /* 表示所有请求都经过 hiddenHttpMethodFilter过滤
+    -->
+    <filter>
+        <filter-name>hiddenHttpMethodFilter</filter-name>
+        <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>hiddenHttpMethodFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!--配置前端控制器/中央控制器/分发控制器
     1. 用户的请求都会经过它的处理
     -->
@@ -15,10 +28,10 @@
         1. 如果没有配置 contextConfigLocation属性
         2. 默认按照这样的位置去定位spring配置文件：WEB-INF/springDispatcherServlet-servlet.xml
         -->
-        <init-param>
-            <param-name>contextConfigLocation</param-name>
-            <param-value>classpath:applicationContext_mvc.xml</param-value>
-        </init-param>
+        <!--<init-param>-->
+        <!--    <param-name>contextConfigLocation</param-name>-->
+        <!--    <param-value>classpath:WEB-INF/applicationContext_mvc.xml</param-value>-->
+        <!--</init-param>-->
         <!--在web项目启动时，就自动加载 DispatcherServlet 对象-->
         <load-on-startup>1</load-on-startup>
     </servlet>
