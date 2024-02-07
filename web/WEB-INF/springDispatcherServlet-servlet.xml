@@ -9,11 +9,21 @@
     <!--配置自动扫描的包-->
     <context:component-scan base-package="com.charlie.web"/>
 
-    <!--配置视图解析器，因为容器中只会有一个视图解析器，所以可以不用配置id，根据类型注入-->
+    <!--配置视图解析器[默认视图解析器]，因为容器中只会有一个视图解析器，所以可以不用配置id，根据类型注入-->
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <!--配置属性suffix和prefix-->
         <property name="prefix" value="/WEB-INF/pages/"/>
         <property name="suffix" value=".jsp"/>
+    </bean>
+
+    <!--
+    1. 配置自定义视图解析器 BeanNameViewResolver
+    2. 可以去解析我们自定义的视图
+    3. 配置属性 order 表示视图解析器执行的顺序，值越小优先级又高
+    4. 属性order的默认优先级是最低的，值为 Integer.MAX_VALUE
+    -->
+    <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+        <property name="order" value="99"/>
     </bean>
 
     <!--加入两个常规配置-->

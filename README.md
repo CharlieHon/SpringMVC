@@ -542,4 +542,139 @@ public class VoteHandler {
 
 ### 数据放入request域
 
+> 开发中，控制器/处理器中获取的数据如何放入 `request` 域，然后再前端(VUE/JSP/...)取出显示
+
+```html
+<h1>添加主人信息[测试数据放入request域]</h1>
+<form action="vote/vote0?" method="post">
+    主人号：<input type="text" name="id"><br/>
+    主人名：<input type="text" name="name"><br/>
+    宠物号：<input type="text" name="pet.id"><br/>
+    宠物名：<input type="text" name="pet.name"><br/>
+    <input type="submit" value="添加主人和宠物">
+</form>
+```
+
+```html
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>vote_ok</title>
+</head>
+<body>
+<h1>获取的数据显示页面</h1>
+<hr/>取出 request域的数据-通过前面el表达式获取<br/>
+address: ${requestScope.address}<br>
+主人名字：${requestScope.master.name}<br/>
+主人信息：${requestScope.master.id}<br/>
+主人名字：${requestScope.master.pet.name}<br/>
+</body>
+</html>
+```
+
+#### 1.通过HttpServletRequest
+
+```java
+public class VoteHandler {
+   /* 演示将提交的数据封装到java对象，springmvc会自动将其放入到request域
+   1. springmvc会自动将获取的model模型，放入到request域
+   2. 也可以手动将master放入到request域，即 ("master", master)
+   3. 这样就可以在跳转到的页面(vote_ok.jsp)，取出数据
+   */
+   @RequestMapping("/vote05")
+   public String test05(Master master, HttpServletRequest req) {
+      // 1) 手动添加request域数据
+      req.setAttribute("address", "TianJin");
+      // 2) 也可以修改master的属性值，根据引用机制，域中的数据也会改变
+      master.setName("Charlie");
+      // 3) springmvc默认存放对象到request域中，属性名是通过 request域 ("master", master)
+      //      属性名：类型名首字母小写
+      return "vote_ok";
+   }
+}
+```
+
+#### 2.通过请求方法参数 Map<String, Object>
+
+```java
+public class VoteHandler {
+   // 演示通过Map<String, Object> 设置数据到request域
+   @RequestMapping("/vote06")
+   public String test06(Master master, Map<String, Object> map) {
+      // 1. 需求：通过map对象，添加属性到request域
+      // 2. 原理分析：springmvc会遍历map，将map的k-v存放到request域
+      map.put("address", "HK");
+      //map.put("master", null);  // 将request中k为master的值置为null
+      return "vote_ok";
+   }
+}
+```
+
+#### 3.通过返回ModelAndView对象
+
+```java
+public class VoteHandler {
+   // 演示通过返回ModelAndView对象，将数据放入到request域
+   @RequestMapping("/vote07")
+   public ModelAndView test07(Master master) {
+      ModelAndView modelAndView = new ModelAndView();
+      // 放入属性到modelAndView对象，最终也会放入到request域中
+      modelAndView.addObject("address", "CN");
+      // 可以把从数据库中得到的数据对象，放入到modelAndView[service-dao-db]
+      // 这里指定跳转的视图名称
+      modelAndView.setViewName("vote_ok");
+      return modelAndView;
+   }
+}
+```
+
+#### 4.注意事项
+
+1. 从本质看，请求响应的方法 `return "xx";` 是返回了一个字符串，其实本质是返回了一个 `ModelAndView` 对象，
+   只是默认被封装起来的。
+2. ModelAndView既可以包含model数据，也可以包含视图信息
+3. ModelAndView对象的 `addObject` 方法可以添加 `key-val` 数据，默认在request域中
+4. ModelAndView对象的 `setViewName` 方法可以指定视图名称
+
+### 数据放入session
+
+```java
+@RequestMapping("/vote")
+public class VoteHandler {
+   // 演示如何将数据设置到session中
+   @RequestMapping("/vote08")
+   public String test08(Master master, HttpSession httpSession) {
+      // master对象是默认放在request域中，以下将对象放入到session中
+      httpSession.setAttribute("master", master);
+      httpSession.setAttribute("address", "JP");
+      return "vote_ok";
+   }
+}
+```
+
+### @ModelAttribute实现prepare方法
+
+1. 开发中，有时需要使用某个前置方法(比如`prepareXX()`)，给目标方法准备一个模型对象
+2. `@ModelAttribute`注解可以实现这样的需求
+3. 在某个方法上，增加了该注解后，在调用该Handler的任何一个方法时，都会先调用这个方法
+4. ![img_19.png](img_19.png)
+
+```java
+@RequestMapping("/vote")
+public class VoteHandler {
+   /*
+   1. 当Handler的方法被表示 @ModelAttribute
+   2. 当调用该Handler的其它方法时，都会先执行该前置方法
+   3. 类似于Spring的AOP的前置通知
+   4. prepareModel配置方法，会切入到其它方法前执行...
+    */
+   @ModelAttribute
+   public void prepareModel() {
+      System.out.println("prepareModel()-------完成准备工作----------");
+   }
+}
+```
+
+## 视图和视图解析器
+
 
