@@ -677,4 +677,93 @@ public class VoteHandler {
 
 ## 视图和视图解析器
 
+### 基本介绍
 
+1. 在 `SpringMVC` 中的目标方法中最终返回的都是一个**视图**(有各种视图)
+2. 返回的视图都会由一个**视图解析器**来处理(视图解析器有很多种)
+3. 在默认情况下，都是返回默认的视图，然后这个返回的视图交由SpringMVC的 `InterbalResourceViewResolver`视图处理器来处理的
+   - ![img_20.png](img_20.png)
+4. 在实际开发中，有时需要自定义视图，这样可以满足更多更复杂的需求
+
+```xml
+ <!--
+ 1. 配置自定义视图解析器 BeanNameViewResolver
+ 2. 可以去解析我们自定义的视图
+ 3. 配置属性 order 表示视图解析器执行的顺序，值越小优先级又高
+ 4. 属性order的默认优先级是最低的，值为 Integer.MAX_VALUE
+ -->
+ <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+     <property name="order" value="99"/>
+ </bean>
+```
+
+```java
+package com.charlie.web.viewresolver;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.view.AbstractView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
+
+/* 自定义视图
+1. MyView 继承了 AbstractView，就可以作为一个视图使用
+2. Component(value = "myView") 将视图注入到容器中，名字/id是 myView
+ */
+@Component(value = "myView")
+public class MyView extends AbstractView {
+    @Override
+    protected void renderMergedOutputModel(Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        // 完成视图渲染，并且可以确定要跳转的页面 /WEB-INF/page/my_view.jsp
+        System.out.println("进入到自己的视图...");
+        /*
+        1. 下面就是进行请求转发到 /WEB-INF/pages/my_view.jsp，访问WEB-INF目录下资源需要使用请求转发
+        2. /WEB-INF/pages/my_view.jsp 会被springmvc(服务器端)解析成 /springmvc/WEB-INF/pages/my_view.jsp
+         */
+        request.getRequestDispatcher("/WEB-INF/pages/my_view.jsp").forward(request, response);
+    }
+}
+```
+
+### 自定义视图工作流程小结
+
+1. 自定义视图：创建一个 `View` 的bean，该bean需要继承自 `AbstractView`，并实现 `renderMergedOutputModel`方法
+2. 并把自定义View加入到IOC容器中
+3. 自定义视图处理器，使用 `BeanNameViewResolver`，这个视图处理器也需要配置到IOC容器
+4. `BeanNameViewResolver`的调用优先级需要设置一下，设置 `order` 比 `Integer.MAX_VALUE`小的值，以确保其在 `InternalResourceViewResolver`
+   之前被调用
+5. ![自定义视图工作流程](img_21.png)
+6. 默认视图解析器一旦进行解析，即使没有找到相应资源，也不会再执行其它自定义解析器(优先级更低的)
+
+### 指定请求转发或者重定向
+
+1. 默认返回的方式是请求转发，然后用视图处理器进行处理，比如在目标方法中这样写 `return "ok";`
+2. 也可以在目标方法直接指定重定向活转发的url地址
+3. 如果指定重定向，则不能定向到 `/WEB-INF/` 目录中
+
+```java
+package com.charlie.web.viewresolver;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller
+@RequestMapping("/goods")
+public class GoodsHandler {
+    // 演示直接指定要请求转发的或者是重定向的页面
+    @RequestMapping("/order")
+    public String order() {
+        System.out.println("==========order()=========");
+        // 请求转发到 /WEB-INF/pages/my_view.jsp，会被解析到 /springmvc/WEB-INF/pages/my_view.jsp
+        //return "forward:/WEB-INF/pages/my_view.jsp";
+
+        /* 直接指定要重定向的页面
+        1. 对于重定向来说，不能重定向到 /WEB/-INF/ 目录下
+        2. redirect 关键字，表示进行重定向
+        3. /login.jsp 会在服务器解析为 /springmvc/login.jsp
+         */
+        return "redirect:/login.jsp";
+    }
+}
+```

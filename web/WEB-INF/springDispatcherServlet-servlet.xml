@@ -14,6 +14,8 @@
         <!--配置属性suffix和prefix-->
         <property name="prefix" value="/WEB-INF/pages/"/>
         <property name="suffix" value=".jsp"/>
+        <!--调整默认视图解析器的优先级-->
+        <property name="order" value="10"/>
     </bean>
 
     <!--
