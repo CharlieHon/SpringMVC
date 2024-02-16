@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans>
+    <!--指定要扫描的基本包以及子包的java类,如果有多个包需要扫描中间使用,分隔-->
+    <component-scan base-package="com.charlie.controller,com.charlie.service"></component-scan>
+</beans>
