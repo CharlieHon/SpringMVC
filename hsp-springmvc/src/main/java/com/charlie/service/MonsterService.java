@@ -10,4 +10,7 @@ public interface MonsterService {
 
     // 通过传入的name，返回monster
     public List<Monster> findMonsterByName(String name);
+
+    // 处理登录需求
+    public boolean login(String name);
 }

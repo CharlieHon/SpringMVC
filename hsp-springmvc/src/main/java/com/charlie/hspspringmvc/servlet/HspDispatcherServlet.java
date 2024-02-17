@@ -3,8 +3,10 @@ package com.charlie.hspspringmvc.servlet;
 import com.charlie.hspspringmvc.annotation.Controller;
 import com.charlie.hspspringmvc.annotation.RequestMapping;
 import com.charlie.hspspringmvc.annotation.RequestParam;
+import com.charlie.hspspringmvc.annotation.ResponseBody;
 import com.charlie.hspspringmvc.context.HspWebApplicationContext;
 import com.charlie.hspspringmvc.handler.HspHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -12,6 +14,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -106,6 +109,8 @@ public class HspDispatcherServlet extends HttpServlet {
                 // 1. 获取http请求的参数集合
                 // 2. 返回的Map<String, String[]> ：String表示http请求的参数名；
                 //  String[]表示http请求的参数值，因为同一个参数可以有多个值：http://localhost:8080/monster/find?name=charlie&hobby=book&hobby=swimming
+                // 处理提交的数据的中文乱码问题！
+                req.setCharacterEncoding("utf-8");
                 Map<String, String[]> parameterMap = req.getParameterMap();
                 // 2. 遍历parameterMap将请求参数，按照顺序填充到实参数组
                 for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
@@ -121,7 +126,14 @@ public class HspDispatcherServlet extends HttpServlet {
                     } else { // 说明没有找到 @RequestParameter 注解，就会使用默认的机制进行配置
                         // 1. 得到目标方法的所有形参的名称-专门编写一个方法，获取形参名称
                         // 2. 对得到的目标方法的所有形参名进行遍历，如果匹配就把当前的请求的参数值，填充到params
-
+                        List<String> parameterNames = getParameterNames(hspHandler.getMethod());
+                        for (int i = 0; i < parameterNames.size(); i++) {
+                            // 如果请求参数名和目标方法的形参一样，则匹配成功
+                            if (name.equals(parameterNames.get(i))) {
+                                params[i] = value;  // 填充到实参数组
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -132,8 +144,37 @@ public class HspDispatcherServlet extends HttpServlet {
                  */
                 //hspHandler.getMethod().invoke(hspHandler.getController(), req, resp);
 
-                // 传入实参数组
-                hspHandler.getMethod().invoke(hspHandler.getController(), params);
+                // 传入实参数组，反射调用目标方法
+                Object result = hspHandler.getMethod().invoke(hspHandler.getController(), params);
+                // 这里对返回的结果进行解析 => 原生SpringMVC可以通过视图解析器完成，这里进行了简化
+                if (result instanceof String) { // 返回String，即视图的字符串
+                    String viewName = (String) result;
+                    if (viewName.contains(":")) {   // 说明返回的String结果是 forward:/login_ok.jsp 或者 redirect:xxx
+                        String viewType = viewName.split(":")[0];   // forward 或者 redirect
+                        String viewPage = viewName.split(":")[1];   // 要跳转的页面名
+                        // 判断是forward还是redirect
+                        if ("forward".equals(viewType)) {   // 请求转发
+                            req.getRequestDispatcher(viewPage).forward(req, resp);
+                        } else if ("redirect".equals(viewType)) {   // 重定向
+                            resp.sendRedirect(viewPage);
+                        }
+                    } else {    // 没有 :，即 return "login_ok.jsp"; 默认是请求转发
+                        req.getRequestDispatcher(viewName).forward(req, resp);
+                    }
+                } else if (result instanceof ArrayList) {    // 返回ArrayList，表示返回json格式的数据
+                    // 判断目标方法是否有注解 @ResponseBody
+                    Method method = hspHandler.getMethod();
+                    if (method.isAnnotationPresent(ResponseBody.class)) {
+                        // 把ArrayList转成json格式数据，之前使用Gson，这里使用jackson包下的工具类
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        String resultJson = objectMapper.writeValueAsString(result);
+                        resp.setContentType("text/html;charset=utf-8");
+                        PrintWriter writer = resp.getWriter();
+                        writer.write(resultJson);
+                        writer.flush();
+                        writer.close();
+                    }
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -163,6 +204,24 @@ public class HspDispatcherServlet extends HttpServlet {
         }
         // 如果没有匹配成功，就返回-1
         return -1;
+    }
+
+    /**
+     * 编写方法，得到目标方法的所有形参名称，并放入到集合中返回
+     * @param method：目标方法
+     * @return 所有形参名称的集合
+     */
+    public List<String> getParameterNames(Method method) {
+        List<String> parametersList = new ArrayList<>();
+        // 获取到所有参数名，在默认情况下 parameter.getName() 返回的是 [arg0, arg1, arg2, arg3]
+        // 这里需要引入一个插件，使用java8特性才能解决
+        Parameter[] parameters = method.getParameters();
+        // 遍历 parameters 取出所有名称
+        for (Parameter parameter : parameters) {
+            parametersList.add(parameter.getName());
+        }
+        //System.out.println("目标方法的形参列表=" + parametersList);
+        return parametersList;
     }
 
     @Override

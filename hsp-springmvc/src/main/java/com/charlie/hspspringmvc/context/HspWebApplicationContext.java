@@ -38,16 +38,16 @@ public class HspWebApplicationContext {
         String[] basePackages = basePackage.split(",");
         // 遍历basePackages,进行扫描
         for (String pack : basePackages) {
-            scanPackage(pack);
+            scanPackage(pack);  // 扫描，获得类的全路径
         }
-        System.out.println("classFullPathList=" + classFullPathList);
+        //System.out.println("classFullPathList=" + classFullPathList);
         // 将扫描到的类,反射注入到ioc容器
         executeInstance();
-        System.out.println("扫描后的ioc容器=" + ioc);
+        //System.out.println("扫描后的ioc容器=" + ioc);
 
         // 完成注入的bean对象属性的装配
         executeAutowired();
-        System.out.println("装配后ioc容器=" + ioc);
+        //System.out.println("装配后ioc容器=" + ioc);
     }
 
     // 创建方法完成对包的扫描，pack标识要扫描的包，如 "com.charlie.controller"
