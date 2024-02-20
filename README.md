@@ -1011,3 +1011,422 @@ public class MonsterHandler {
 1. setDisallowedFields()是可变形参，可以指定多个字段
 2. 当将一个字段/属性，设置为disallowed,就不在接收表单提交的值，那么这个字段/属性的值，就是该对象默认的值(具体看程序员定义时指定)
 3.  一般来说，如果不接收表单字段提交数据，则该对象字段的验证也就没有意义了可以注销掉，比如注销`//@NotEmpty`
+
+## 中文乱码处理
+
+### 自定义中文乱码过滤器
+
+- ![img_32.png](img_32.png)
+
+```xml
+ <filter>
+     <filter-name>MyCharacterFilter</filter-name>
+     <filter-class>com.charlie.web.filter.MyCharacterFilter</filter-class>
+ </filter>
+ <filter-mapping>
+     <filter-name>MyCharacterFilter</filter-name>
+     <url-pattern>/*</url-pattern>
+ </filter-mapping>
+```
+
+```java
+package com.charlie.web.filter;
+
+import javax.servlet.*;
+import java.io.IOException;
+
+// 编写过滤器，处理中文乱码
+public class MyCharacterFilter implements Filter {
+   @Override
+   public void init(FilterConfig filterConfig) throws ServletException {}
+
+   @Override
+   public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+                        FilterChain filterChain) throws IOException, ServletException {
+      // 加入对编码的处理
+      servletRequest.setCharacterEncoding("utf-8");
+      // 放行请求，这个规则和JavaWeb中过滤器规则一致
+      filterChain.doFilter(servletRequest, servletResponse);
+   }
+
+   @Override
+   public void destroy() {}
+}
+```
+
+### Spring提供的过滤器处理中文乱码
+
+```xml
+ <!--配置Spring提供的过滤器，解决中文乱码问题-->
+ <filter>
+     <filter-name>CharacterEncodingFilter</filter-name>
+     <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+     <init-param>
+         <param-name>encoding</param-name>
+         <param-value>utf-8</param-value>
+     </init-param>
+ </filter>
+ <filter-mapping>
+     <filter-name>CharacterEncodingFilter</filter-name>
+     <url-pattern>/*</url-pattern>
+ </filter-mapping>
+```
+
+## 处理JSON和HttpMessageConverter<T>
+
+### 处理JSON-@ResponseBody
+
+- ![img_33.png](img_33.png)
+- ![img_34.png](img_34.png)
+
+```html
+<html>
+<head>
+    <title>json提交</title>
+    <%--引入jquery--%>
+    <script type="text/javascript" src="script/jquery-3.6.0.min.js"></script>
+    <%--编写jquery代码和ajax请求--%>
+    <script type="text/javascript">
+        $(function () {
+            // 给id="getJson"绑定点击事件
+            $("#getJson").click(function () {
+                var url = this.href;
+                var args = {"time": new Date()};    // 这时要发送的数据，为了防止页面缓存
+                $.post(
+                    url,
+                    args,
+                    function (data) {
+                        // data就是返回的数据，应该是json格式=>如果是多个json数据，可以遍历
+                        console.log("data=", data);
+                        console.log("dog.name=", data.name);
+                        console.log("dog.address=", data.address);
+                    },
+                    "json"
+                );
+                return false;   // 这里返回false，就不适用href默认机制
+            })
+        })
+    </script>
+
+</head>
+<body>
+<h1>请求一个json数据</h1>
+<%--做一个处理
+1. 当用户点击超链接时，发出一个ajax请求
+2. 接收到请求后，查看这个json数据
+3. 使用之前讲过的jquery发出ajax请求
+--%>
+<a href="json/dog" id="getJson">点击获取json数据</a>
+</body>
+</html>
+```
+
+```java
+package com.charlie.web.json;
+
+import com.charlie.web.json.entity.Dog;
+import com.charlie.web.json.entity.User;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// @ResponseBody可以写在Controller上对类进行注解，这样等价于在该类的所有方法上加上该注解
+//@ResponseBody
+//@Controller
+@RestController // @ResponseBody + @Controller <==> @RestController
+public class JsonHandler {
+
+    /**
+     * 1. 注解 @ResponseBody 表示返回的数据是json格式
+     * 2. SpringMVC底层根据目标方法 @ResponseBody，返回指定格式，根据http请求来进行处理
+     * 3. 底层原理在前面自定义@ResponseBody提到，这里原生的SpringMVC使用转换器
+     * 4. HttpMessageConverter
+     */
+    @RequestMapping(value = "/json/dog")
+    //@ResponseBody
+    public Dog getJson() {
+        // 返回对象，springmvc会根据设置，转成json格式数据
+        Dog dog = new Dog();
+        dog.setName("旺财");
+        dog.setAddress("七里台");
+        return dog;
+    }
+
+    // 编写方法，以json格式返回多个dog
+    // @ResponseBody 支持返回集合
+    @RequestMapping(value = "/json/dogs")
+    //@ResponseBody
+    public List<Dog> getJsons() {
+        List<Dog> dogs = new ArrayList<>();
+        dogs.add(new Dog("旺财", "七里台"));
+        dogs.add(new Dog("小白", "八里台"));
+        dogs.add(new Dog("阿宝", "张家界"));
+        return dogs;
+    }
+}
+```
+
+### 处理JSON-@RequestBody
+
+之前都是通过表单/url请求携带参数名=参数值，把数据提交给目标方法：
+1. 客户端发送**JSON字符串数据**
+2. 使用SpringMVC的 `@RequestBody` 将客户端提交的json数据，封装成JavaBean对象
+
+```html
+<html>
+<head>
+    <title>json提交</title>
+    <%--引入jquery--%>
+    <script type="text/javascript" src="script/jquery-3.6.0.min.js"></script>
+    <%--编写jquery代码和ajax请求--%>
+    <script type="text/javascript">
+        $(function () {
+           // 绑定点击事件，提交json数据
+           $("button[name='btn1']").click(function () {
+              // 目标：将userName和age封装成json字符串，发送给目标方法
+              var url = "/springmvc/json/user";
+              var userName = $("#userName").val();
+              var age = $("#age").val();
+              // 以下将json对象转成json字符串
+              var args = JSON.stringify({"userName": userName, "age": age});
+              $.ajax({
+                 url: url,
+                 data: args,
+                 type: "post",
+                 success: function (data) {
+                    console.log("data=", data);
+                 },
+                 // ContextType：指定发送数据时编写的格式
+                 contentType: "application/json;charset=utf-8"
+              })
+           })
+        })
+    </script>
+
+</head>
+<body>
+<h1>发出一个json数据</h1>
+u: <input id="userName" type="text"><br/>
+a: <input id="age" type="text"><br/>
+<button name="btn1">添加用户</button>
+</body>
+</html>
+```
+
+```java
+package com.charlie.web.json;
+
+import com.charlie.web.json.entity.Dog;
+import com.charlie.web.json.entity.User;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// @ResponseBody可以写在Controller上对类进行注解，这样等价于在该类的所有方法上加上该注解
+//@ResponseBody
+//@Controller
+@RestController // @ResponseBody + @Controller <==> @RestController
+public class JsonHandler {
+   /**
+    * 1. @RequestBody User user 在形参上加上注解 @RequestBody，springMVC就会将提交的json字符串数据填充给指定的JavaBean
+    * 2. 如果不添加注解 @RequestBody 的话，返回的数据为 User{userName='null', age=null}
+    */
+   @RequestMapping(value = "/json/user")
+   //@ResponseBody
+   public User getUser(@RequestBody User user) {
+      // 将前台传过来的数据，以json个格式返回
+      System.out.println(user);
+      return user;
+   }
+}
+```
+
+使用Postman测试时，需要设置Header参数`Content-Type: application/json`
+- ![img_35.png](img_35.png)
+
+### 处理JSON-注意事项和细节
+
+1. 目标方法正常返回JSON需要的数据，可以时一个对象，也可以是一个集合
+2. `ResponseBody`可以直接写在Controller上，这样对所有方法都生效
+3. `@ResponseBody`和`@Controller`可以直接写成`@RestController`
+
+### HttpMessageConverter<T>
+
+- ![img_36.png](img_36.png)
+
+> SpringMVC处理JSON底层实现是依靠 `HttpMessageConverter<T>` 来进行转换的
+> 1. 使用 `HttpMessageConverter<T>` 将请求信息转化并绑定到处理方法的入参中，或将响应结果转为对应类型的响应信息，Spring提供了两种途径
+>    1) 使用 `@RequestBody`/`@ResponseBody`对目标方法进行标注
+>    2) 使用 `HttpEntity<T>`/`ResponseEntity<T>` 作为目标方法的入参或返回值
+> 2. 当控制器处理方法使用到`@RequestBody`/`@ResponseBody`或者`HttpEntity<T>`/`ResponseEntity<T>`时，Spring首先根据请求头或响应头的Accept属性选择
+>    匹配的`HttpMessageConverter`，进而根据参数类型或泛型类型的过滤得到匹配的`HttpMessageConverter`，若找不到可用的将报错
+
+| ![img_37.png](img_37.png) | ![img_38.png](img_38.png) |
+|---------------------------|---------------------------|
+
+```java
+// 因为请求/返回数据的类型都是JSON，所以会找到HttpMessageConverter的实现子类AbstractJackson2HttpMessageConverter
+public abstract class AbstractJackson2HttpMessageConverter extends AbstractGenericHttpMessageConverter<Object> {
+   /**
+    * 处理JSON类型请求数据
+    * @param javaType   @RequestBody注解修饰的传入参数：@RequestBody User user，即[simple type, class com.charlie.web.json.entity.User]
+    * @param inputMessage 请求数据的封装
+    */
+    private Object readJavaType(JavaType javaType, HttpInputMessage inputMessage) throws IOException {
+      // contentType：请求数据类型，application/json
+      MediaType contentType = inputMessage.getHeaders().getContentType();
+      // 请求的字符集：UTF-8
+      Charset charset = getCharset(contentType);
+      // 将请求的数据转换为指定格式(javabean->json)
+      ObjectMapper objectMapper = selectObjectMapper(javaType.getRawClass(), contentType);
+      Assert.state(objectMapper != null, "No ObjectMapper for " + javaType);
+
+      boolean isUnicode = ENCODINGS.containsKey(charset.name()) ||
+              "UTF-16".equals(charset.name()) ||
+              "UTF-32".equals(charset.name());
+      try {
+         if (inputMessage instanceof MappingJacksonInputMessage) {
+            Class<?> deserializationView = ((MappingJacksonInputMessage) inputMessage).getDeserializationView();
+            if (deserializationView != null) {
+               ObjectReader objectReader = objectMapper.readerWithView(deserializationView).forType(javaType);
+               if (isUnicode) {
+                  return objectReader.readValue(inputMessage.getBody());
+               }
+               else {
+                  Reader reader = new InputStreamReader(inputMessage.getBody(), charset);
+                  return objectReader.readValue(reader);
+               }
+            }
+         }
+         if (isUnicode) {
+            return objectMapper.readValue(inputMessage.getBody(), javaType);
+         }
+         else {
+            Reader reader = new InputStreamReader(inputMessage.getBody(), charset);
+            return objectMapper.readValue(reader, javaType);
+         }
+      }
+      catch (InvalidDefinitionException ex) {
+         throw new HttpMessageConversionException("Type definition error: " + ex.getType(), ex);
+      }
+      catch (JsonProcessingException ex) {
+         throw new HttpMessageNotReadableException("JSON parse error: " + ex.getOriginalMessage(), ex, inputMessage);
+      }
+   }
+
+   /**
+    * 处理响应数据
+    * @param object 返回的javabean对象，即return user;
+    * @param type   返回数据的类型 class com.charlie.web.json.entity.User
+    * @param outputMessage  返回数据的封装，根据方法上的@ResponseBody可知要返回json数据格式的数据
+    */
+   @Override
+   protected void writeInternal(Object object, @Nullable Type type, HttpOutputMessage outputMessage)
+           throws IOException, HttpMessageNotWritableException {
+
+      MediaType contentType = outputMessage.getHeaders().getContentType();  // application/json
+      JsonEncoding encoding = getJsonEncoding(contentType); // UTF8
+
+      Class<?> clazz = (object instanceof MappingJacksonValue ?
+              ((MappingJacksonValue) object).getValue().getClass() : object.getClass());
+      ObjectMapper objectMapper = selectObjectMapper(clazz, contentType);
+      Assert.state(objectMapper != null, "No ObjectMapper for " + clazz.getName());
+
+      OutputStream outputStream = StreamUtils.nonClosing(outputMessage.getBody());
+      try (JsonGenerator generator = objectMapper.getFactory().createGenerator(outputStream, encoding)) {
+         writePrefix(generator, object);
+
+         Object value = object;
+         Class<?> serializationView = null;
+         FilterProvider filters = null;
+         JavaType javaType = null;
+
+         if (object instanceof MappingJacksonValue) {
+            MappingJacksonValue container = (MappingJacksonValue) object;
+            value = container.getValue();
+            serializationView = container.getSerializationView();
+            filters = container.getFilters();
+         }
+         if (type != null && TypeUtils.isAssignable(type, value.getClass())) {
+            javaType = getJavaType(type, null);
+         }
+
+         ObjectWriter objectWriter = (serializationView != null ?
+                 objectMapper.writerWithView(serializationView) : objectMapper.writer());
+         if (filters != null) {
+            objectWriter = objectWriter.with(filters);
+         }
+         if (javaType != null && javaType.isContainerType()) {
+            objectWriter = objectWriter.forType(javaType);
+         }
+         SerializationConfig config = objectWriter.getConfig();
+         if (contentType != null && contentType.isCompatibleWith(MediaType.TEXT_EVENT_STREAM) &&
+                 config.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
+            objectWriter = objectWriter.with(this.ssePrettyPrinter);
+         }
+         objectWriter.writeValue(generator, value);
+
+         writeSuffix(generator, object);
+         generator.flush();
+      }
+      catch (InvalidDefinitionException ex) {
+         throw new HttpMessageConversionException("Type definition error: " + ex.getType(), ex);
+      }
+      catch (JsonProcessingException ex) {
+         throw new HttpMessageNotWritableException("Could not write JSON: " + ex.getOriginalMessage(), ex);
+      }
+   }
+}
+```
+
+### 文件下载-ResponseEntity
+
+> 在SpringMVC中，通过返回 `ResponseEntity<T>` 的类型，可以实现文件下载功能
+
+```html
+<h1>下载文件的测试</h1>
+<a href="downFile">点击下载文件</a>
+```
+
+```java
+package com.charlie.web.json;
+
+@RestController // @ResponseBody + @Controller <==> @RestController
+public class JsonHandler {
+    // 编写方法，相应用户下载文件的请求
+    // 构建一个ResponseEntity对象：1) 下载的文件(响应体) 2) http响应头的headers 3) http响应状态
+    @RequestMapping(value = "/downFile")
+    public ResponseEntity<byte[]> downFile(HttpSession session) throws IOException {
+        // 1. 先获取到要下载文件的inputStream
+        InputStream resourceAsStream = session.getServletContext().getResourceAsStream("/img/1.png");
+        // 2. 开辟一个存放文件的byte数组，使用byte数组可以支持二进制数据(图片、视频)
+        byte[] bytes = new byte[resourceAsStream.available()];
+        // 3. 将要下载文件的数据，读入到byte[]
+        resourceAsStream.read(bytes);
+        // 4. 创建返回的HttpStatus
+        HttpStatus httpStatus = HttpStatus.OK;
+        // 5. 创建headers
+        HttpHeaders headers = new HttpHeaders();
+        // 指定返回的数据，客户端应当以附件形式处理
+        // Content-Type：指示相应内容的格式；Content-Disposition：指示如何处理响应内容
+        headers.add("Content-Disposition", "attachment;filename=1.png");
+
+        // 构建ResponseEntity<T>
+        ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(bytes, headers, httpStatus);
+        return responseEntity;
+    }
+}
+```
+
+| ![img_39.png](img_39.png) | ![img_40.png](img_40.png) |
+|---------------------------|---------------------------|

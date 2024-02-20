@@ -21,7 +21,7 @@ public class Monster {
 
     // @NotEmpty 表示name不能为空
     // Asserts that the annotated string, collection, map or array is not {@code null} or empty.
-    //@NotEmpty
+    @NotEmpty
     private String name;
 
     @NotNull(message = "生日不能为空")

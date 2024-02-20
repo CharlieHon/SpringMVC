@@ -63,18 +63,18 @@ public class MonsterHandler {
     }
 
     // 取消绑定monster的name表单提交的值给monster.name属性
-    @InitBinder
-    public void initBinder(WebDataBinder webDataBinder) {
-        /*
-        1. 方法上需要标注 @InitBinder，SpringMVC底层会初始化WebDataBinder
-        2. 调用 webDataBinder.setDisallowedFields("name"); 表示取消指定属性的绑定，即
-            当表单提交的字段为name时，就不再把接收到的name值填充到monster的name属性
-        3. 机制：SpringMVC在底层通过反射调用方法时，会接收到http请求的参数和值，使用反射+注解技术，取消对指定属性的填充
-        4. setDisallowedFields支持可变参数，可以填写多个字段，如 setDisallowedFields("name", "email");
-        5. 如果取消某个属性绑定，验证也就没有意义了，应当把验证的注解去掉，否则可能会报错；name属性会使用默认值，即null
-            // @NotEmpty
-            private String name;
-         */
-        webDataBinder.setDisallowedFields("name");
-    }
+    //@InitBinder
+    //public void initBinder(WebDataBinder webDataBinder) {
+    //    /*
+    //    1. 方法上需要标注 @InitBinder，SpringMVC底层会初始化WebDataBinder
+    //    2. 调用 webDataBinder.setDisallowedFields("name"); 表示取消指定属性的绑定，即
+    //        当表单提交的字段为name时，就不再把接收到的name值填充到monster的name属性
+    //    3. 机制：SpringMVC在底层通过反射调用方法时，会接收到http请求的参数和值，使用反射+注解技术，取消对指定属性的填充
+    //    4. setDisallowedFields支持可变参数，可以填写多个字段，如 setDisallowedFields("name", "email");
+    //    5. 如果取消某个属性绑定，验证也就没有意义了，应当把验证的注解去掉，否则可能会报错；name属性会使用默认值，即null
+    //        // @NotEmpty
+    //        private String name;
+    //     */
+    //    webDataBinder.setDisallowedFields("name");
+    //}
 }
