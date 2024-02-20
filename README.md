@@ -767,3 +767,247 @@ public class GoodsHandler {
     }
 }
 ```
+
+## 自己实现SpringMVC底层机制
+
+略
+
+## 数据格式化
+
+### 基本介绍
+
+> 说明：在提交数据(比如表单时)SpringMVC怎样对提交的数据进行转换和处理
+
+1. 基本数据类型可以和字符串之间自动完成转换，比如：SpringMVC上下文中内奸了很多转换器，可完成大多数java类型的转换工作
+2. ![img_22.png](img_22.png)
+
+### 特殊数据类型和字符串
+
+1. 特殊数据类型和字符串之间的转换使用**注解**(比如日期，规定格式的小数比如货币形式等)
+2. 对于日期和货币可以使用 `@DateTimeFormat` 和 `@NumberFormat` 注解，把这两个注解标记在字段上即可
+
+```java
+public class Monster {
+    private Integer id;
+    private String email;
+    
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date birthday;
+
+    @NumberFormat(pattern = "###,###.##")
+    private Float salary;
+}
+```
+
+## 验证以及国际化
+
+1. 对输入的数据(比如表单数据)，进行必要的验证，并给出相应的提示信息
+2. 对于验证表单数据，springmvc提供了很多使用的注解，这些注解由JSR303验证框架提供
+3. JSR303验证框架
+   - ![JSR303](img_23.png)
+4. `Hibernate Validator`扩展注解
+   - ![Hibernate Validator](img_24.png)
+5. 给Monster的字段加上数据验证的注解
+   - ![Monster](img_26.png)
+   - ![引入验证和国际化相关的jar包](img_25.png)
+
+```java
+package com.charlie.web.datavalid;
+
+import com.charlie.web.datavalid.entity.Monster;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import javax.validation.Valid;
+import java.util.List;
+import java.util.Map;
+
+
+/**
+ * MonsterHandler处理器响应用户提交数据
+ * @Scope(value = "prototype") 表示每次请求MonsterHandler会生成一个新的对象
+ */
+@Controller
+@Scope(value = "prototype")
+public class MonsterHandler {
+    /**
+     * 显示添加monster的界面
+     * 1. 这里的Map<String, Object> map，当向map中添加数据时会默认存放在request域中
+     */
+    @RequestMapping(value = "/addMonsterUI")
+    public String addMonsterUI(Map<String, Object> map) {
+        map.put("monster", new Monster());
+        // 如果跳转的页面使用了SpringMVC标签，那么就需要准备一个对象，放入request域中，这个对象的属性名monster
+        //      对应表单标签的 modelAttribute="monster"
+        return "datavalid/monster_addUI";
+    }
+
+    /* 编写方法，处理添加妖怪
+    1. SpringMVC可以将提交的数据，按照参数名和对象的属性名匹配
+    2. 直接封装到对象中
+    3. @Valid Monster monster 表示对monster接收的数据进行校验
+    4. Errors errors 表示如果校验出现错误，将校验错误信息保存到errors
+    5. Map<String, Object> map 表示如果校验出现错误，将校验的错误信息保存到map，提示保存monster对象
+    6. 校验发生的时机：在springmvc底层，反射调用目标方法时，会接收http请求的数据，然后根据注解来进行验证，
+        在验证过程中，如果出现了错误，就把错误信息填充errors和map。底层：反射+注解
+     */
+    @RequestMapping(value = "/save")
+    public String save(@Valid Monster monster, Errors errors, Map<String, Object> map) {
+        System.out.println("------monster------" + monster);
+        // 为了看到校验的效果，输出map和errors
+        System.out.println("======== map ========");
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            System.out.println("key=" + entry.getKey() + ", value=" + entry.getValue());
+        }
+        System.out.println("======== errors ========");
+        if (errors.hasErrors()) {
+            List<ObjectError> allErrors = errors.getAllErrors();
+            for (ObjectError error : allErrors) {
+                System.out.println("error=" + error);
+            }
+            return "datavalid/monster_addUI";
+        }
+        return "datavalid/success";
+    }
+}
+```
+
+- 配置国际化文件
+
+```xml
+ <!--配置国际化错误信息资源处理bean-->
+ <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+     <!--配置国家化文件名字，如果这样配置的话，表示messageSource回到 src/i18nXXX.properties去读取错误信息-->
+     <property name="basename" value="i18n"></property>
+ </bean>
+```
+
+```html
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>添加妖怪</title>
+</head>
+<body>
+<h3>添加妖怪</h3>
+<%--这里的表单使用的是SoringMVC的标签来完成的
+1. SpringMVC表单标签在显示之前必须在 request中有一个bean，该bean的属性和表单标签的字段要对应
+    request域中的key为：form标签的modelAttribute属性值，比如这里的monster
+2. SpringMVC的 form:from标签的action属性值中的 / 不代表 WEB应用的根目录
+3. 这里使用SpringMVC的标签主要目的是为了方便提示信息回显
+--%>
+<form:form action="save" method="post" modelAttribute="monster">
+    妖怪名字：<form:input path="name"/><form:errors path="name"/> <br/>
+    妖怪年龄：<form:input path="age"/><form:errors path="age"/> <br/>
+    电子邮件：<form:input path="email"/><form:errors path="email"/> <br/>
+    妖怪生日：<form:input path="birthday"/><form:errors path="birthday"/> 要求以"9999-11-11"的形式<br/>
+    妖怪薪水：<form:input path="salary"/><form:errors path="salary"/> 要求以"123,890.12"的形式<br/>
+    <input type="submit" value="添加妖怪"/>
+</form:form>
+</body>
+</html>
+```
+
+### 细节说明和注意事项
+
+1. 在需要验证的 `JavaBean/POJO`的字段上加上相应的验证注解
+2. 目标方法上，在 `JavaBean/POJO`类型的参数前，添加 `@Valid`注解，告知SpringMVC是需要验证的
+3. 在 `@Valid` 注解之后，添加一个 `Error` 或 `BindingResult`类型的参数，可以获取到验证的错误信息
+4. 需要使用 `<form:errors path="email"></form:errors>`标签来显示错误信息，这个标签需要写在`<form:form>`标签内生效
+5. 错误信息的国际化文件 `i18n.properties`，中文需要是`Unicode`编码，使用工具转码
+6. 格式：验证规则.表单(modelAttribute值).属性名=消息信息
+   - ![i18n.properties](img_27.png)
+7. 注解 `@NotNull`和 `NotEmpty`的区别说明
+   - ![img_28.png](img_28.png)
+8. SpringMVC验证时，会根据不同的验证错误，返回对应的信息
+
+### 注解的结合使用
+
+- ![先看一个问题](img_29.png)
+- 解决方法：将`@NotNull` + `@Range`组合使用
+
+```java
+package com.charlie.web.datavalid.entity;
+
+import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.constraints.Range;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.NumberFormat;
+
+import javax.validation.constraints.NotNull;
+import java.util.Date;
+
+public class Monster {
+    private Integer id;
+
+    @NotEmpty(message = "邮箱不能为空")
+    private String email;
+
+    @NotNull(message = "年龄不能为空")
+    // @Range(min = 1, max = 100) 表示接收的age值在1~100之间
+    @Range(min = 1, max = 100)
+    private Integer age;
+
+    // @NotEmpty 表示name不能为空
+    // Asserts that the annotated string, collection, map or array is not {@code null} or empty.
+    //@NotEmpty
+    private String name;
+
+    @NotNull(message = "生日不能为空")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date birthday;
+
+    @NotNull(message = "薪水不能为空")
+    @NumberFormat(pattern = "###,###.##")
+    private Float salary;
+
+    public Monster() {}
+}
+```
+
+### 数据类型转换校验核心类-DataBinder
+
+- DataBinder工作机制
+  - 通过反射机制对目标方法进行解析，将请求消息绑定到处理方法的入参中，数据绑定的核心部件是DataBinder，运行机制如下
+  - ![DataBinder工作机制](img_30.png)
+- Debug一下`validate`得到验证`errors`信息
+  - ![img_31.png](img_31.png)
+
+### 取消某个属性的绑定
+
+> 在默认情况下，表单提交的数据都会和POJO类型的JavaBean属性绑定，如果在开发中希望取消某个属性的绑定，即
+> **不希望接收到某个表单对应的属性的值**，则可以通过 `@InitBinder`注解取消绑定
+
+1. 编写一个方法，使用@InitBinder标识的该方法，可以对WebDataBinder对象进行初始化。WebDataBinder是DataBinder 的子类，用于完成由表单字段到JavaBean属性的绑定
+2. `@InitBinder`方法不能有返回值，它必须声明为void
+3. `@InitBinder`方法的参数通常是`WebDataBinder`
+
+```java
+@Controller
+@Scope(value = "prototype")
+public class MonsterHandler {
+    // 取消绑定monster的name表单提交的值给monster.name属性
+    @InitBinder
+    public void initBinder(WebDataBinder webDataBinder) {
+        /*
+        1. 方法上需要标注 @InitBinder，SpringMVC底层会初始化WebDataBinder
+        2. 调用 webDataBinder.setDisallowedFields("name"); 表示取消指定属性的绑定，即
+            当表单提交的字段为name时，就不再把接收到的name值填充到monster的name属性
+        3. 机制：SpringMVC在底层通过反射调用方法时，会接收到http请求的参数和值，使用反射+注解技术，取消对指定属性的填充
+        4. setDisallowedFields支持可变参数，可以填写多个字段，如 setDisallowedFields("name", "email");
+        5. 如果取消某个属性绑定，验证也就没有意义了，应当把验证的注解去掉，否则可能会报错；name属性会使用默认值，即null
+            // @NotEmpty
+            private String name;
+         */
+        webDataBinder.setDisallowedFields("name");
+    }
+}
+```
+
+1. setDisallowedFields()是可变形参，可以指定多个字段
+2. 当将一个字段/属性，设置为disallowed,就不在接收表单提交的值，那么这个字段/属性的值，就是该对象默认的值(具体看程序员定义时指定)
+3.  一般来说，如果不接收表单字段提交数据，则该对象字段的验证也就没有意义了可以注销掉，比如注销`//@NotEmpty`
