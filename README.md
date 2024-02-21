@@ -1256,7 +1256,7 @@ public class JsonHandler {
 
 ### 处理JSON-注意事项和细节
 
-1. 目标方法正常返回JSON需要的数据，可以时一个对象，也可以是一个集合
+1. 目标方法正常返回JSON需要的数据，可以是一个对象，也可以是一个集合
 2. `ResponseBody`可以直接写在Controller上，这样对所有方法都生效
 3. `@ResponseBody`和`@Controller`可以直接写成`@RestController`
 
@@ -1430,3 +1430,231 @@ public class JsonHandler {
 
 | ![img_39.png](img_39.png) | ![img_40.png](img_40.png) |
 |---------------------------|---------------------------|
+
+## SpringMVC文件上传
+
+1. SpringMVC为文件上传提供了直接的支持，这种支持是通过即插即用的`MultipartResolver`实现的。Spring用`Jakarta Commons FileUpload`技术
+   实现了一个`MultipartResolver`实现类`CommonsMultipartResolver`
+2. SpringMVC上下文中默认没有装配`MultipartResolver`，因此默认情况下不能处理文件的上传工作，如果想使用Spring的文件上传功能，需要
+   在上下文中配置 `MultipartResolver`
+
+```xml
+ <!--配置文件上传需要的bean，id需要设置为multipartResolver-->
+ <bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="multipartResolver"/>
+```
+
+```html
+<html>
+<head>
+    <title>文件上传</title>
+</head>
+<body>
+<h1>文件上传演示</h1>
+<form action="fileUpload" method="post" enctype="multipart/form-data">
+    文件简介：<input type="text" name="introduce"/><br/>
+    选择文件：<input type="file" name="file"/><br/>
+    <input type="submit" value="上传文件">
+</form>
+</body>
+</html>
+```
+
+```java
+// 处理文件上传的handler
+@Controller
+public class FileUploadHandler {
+    /**
+     * 处理文件上传的请求
+     * @param file 前端传入的参数名为file：<input type="file" name="file"/>
+     *             参数MultipartFile file，即上传的文件
+     */
+    @RequestMapping(value = "/fileUpload")
+    public String fileUpload(@RequestParam(value = "file") MultipartFile file, HttpServletRequest req, String introduce) throws IOException {
+        // 接收到提交的文件名
+        String fileName = file.getOriginalFilename();
+        System.out.println("上传的文件名：" + fileName);
+        System.out.println("文件介绍：" + introduce);
+        // 得到要把上传的文件保存到哪个路径，全路径：包括文件名
+        String fileFullPath = req.getServletContext().getRealPath("/img/" + fileName);
+        System.out.println("保存文件的路径：" + fileFullPath);
+        // 创建文件
+        File saveToFile = new File(fileFullPath);
+        // 将上传的文件，转存到saveToFile
+        file.transferTo(saveToFile);
+        return "success";
+    }
+}
+```
+
+## 自定义拦截器
+
+### 什么是拦截器
+
+1. SpringMVC可以使用拦截器对请求进行拦截处理，用户可以自定义拦截器来实现特定的功能
+2. 自定义的拦截器必须实现 `HandlerInterceptor`接口
+3. 自定义拦截器的三个方法
+   1) `preHandle()`：在业务处理器处理请求之前被调用，在该方法中对用户请求request进行处理
+   2) `postHandle()`：在目标方法处理完请求后执行
+   3) `afterCompletion()`：在完全处理完请求后被调用，可以在该方法中进行一些资源请理的操作
+
+### 自定义拦截器执行流程图
+
+| ![img_41.png](img_41.png) | ![img_42.png](img_42.png) |
+|---------------------------|---------------------------|
+
+```java
+package com.charlie.web.interceptor;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+// 拦截器需要注入到容器中，并且需要在spring配置文件中进行配置
+@Component
+public class MyInterceptor01 implements HandlerInterceptor {
+    /**
+     * 1. preHandler在目标方法执行前被执行
+     * 2. 如果preHandler()返回false，则不再执行目标方法
+     * 3. 该方法可以获取到 request, response, handler
+     * 4. 这里根据业务，可以进行拦截，并指定跳转到哪个页面
+     */
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("--MyInterceptor01--preHandle()...");
+        // 获取到用户提交的关键字
+        String topic = request.getParameter("topic");
+        if ("病毒".equals(topic)) {
+            request.getRequestDispatcher("/WEB-INF/pages/warning.jsp").forward(request, response);
+            return false;
+        }
+        System.out.println("得到的topic=" + topic);
+        return true;
+    }
+
+    /**
+     * 1. 在目标方法执行后，执行postHandle()方法
+     * 2. 该方法可以获取到目标方法，返回的ModelAndView
+     * 3.
+     */
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        System.out.println("--MyInterceptor01--postHandle()...");
+    }
+
+    /**
+     * 1. 该方法afterCompletion()在视图渲染后被执行，这里可以进行资源请理工作
+     */
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        System.out.println("--MyInterceptor01--afterCompletion()...");
+    }
+}
+```
+
+```xml
+ <!--配置自定义拦截器-spring配置文件-->
+ <mvc:interceptors>
+     <!--第一种配置方式
+     1. 直接使用ref引用到对应的MyInterceptor01
+     2. 这种方式会拦截所有的目标方法
+     -->
+     <!--<ref bean="myInterceptor01"/>-->
+
+     <!--第二种配置方式
+     1. mvc:mapping path="/hi" 指定要拦截的路径
+     2. <ref bean="myInterceptor01"/> 指定对哪个拦截器进行配置
+     -->
+     <!--<mvc:interceptor>-->
+     <!--    <mvc:mapping path="/hi"/>           -->
+     <!--    <ref bean="myInterceptor01"/>-->
+     <!--</mvc:interceptor>-->
+
+     <mvc:interceptor>
+         <!--第三种配置方式
+         1. mapping path="/h*" 通配符方式，表示拦截 /h 开头的路径
+         2. exclude-mapping path="/hi" 表示 /i 不会被拦截
+         -->
+         <mvc:mapping path="/h*"/>
+         <mvc:exclude-mapping path="/hello"/>
+         <ref bean="myInterceptor01"/>
+     </mvc:interceptor>
+
+     <!--配置多个拦截器
+     1. 配置第二个拦截器
+     2. 多个拦截器在执行时，是按照顺序执行的
+     -->
+     <mvc:interceptor>
+         <mvc:mapping path="/h*"/>
+         <ref bean="myInterceptor02"/>
+     </mvc:interceptor>
+ </mvc:interceptors>
+```
+
+### 注意事项和细节
+
+1. 默认配置所有的目标方法都会被拦截，也可以指定拦截目标方法，比如只拦截hi
+   - ![img_43.png](img_43.png)
+2. `mvc:mapping`支持通配符，同时可以指定不对哪些目标方法进行拦截
+3. 拦截器需要配置才生效，只通过`@Component`注解和实现`HandlerInterceptor`接口是不够的
+4. 如果`preHandler()`方法返回false，则不会执行目标方法，可以在这里根据业务需求指定跳转页面
+
+### 多个拦截器
+
+1. 当配置多个拦截器时，按照配置的顺序执行拦截，如果先配置`myInterceptor01`，再配置`myInterceptor02`
+2. 多个拦截器执行流程示意图
+   - ![img_44.png](img_44.png)
+   - ![img_45.png](img_45.png)
+
+```java
+package com.charlie.web.interceptor;
+@Component
+public class MyInterceptor02 implements HandlerInterceptor {
+    /**
+     * 1. pre方法再目标方法执行之前被调用
+     * 2. 返回false，则不会再执行目标方法，可以再次响应请求返回页面
+     * 3. 不管返回false，还是true，都会执行此拦截器之前的拦截器的afterCompletion方法。
+     *      注意：不会执行当前拦截器的afterCompletion方法
+     */
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("--MyInterceptor02--preHandler()...");
+        return false;
+    }
+
+    // 在目标方法被执行之后执行，可以在该方法中访问到目标方法返回的ModelAndView对象
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        System.out.println("--MyInterceptor02--postHandler()...");
+    }
+
+    /**
+     * 1。若preHandle返回true，则方法在渲染视图之后被执行
+     * 2. 若preHandle返回false，则该方法不会被调用
+     * 3. 若当前拦截器的下一个拦截器的preHandle方法返回false，则在执行下一个拦截器preHandle方法后马上被执行
+     */
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        System.out.println("--MyInterceptor02--afterCompletion()...");
+    }
+}
+```
+
+```md
+1. 当两个拦截器都生效时，输出如下
+   --MyInterceptor01--preHandle()...
+   --MyInterceptor02--preHandler()...
+   --FurnHandler--hi()...
+   --MyInterceptor02--postHandler()...
+   --MyInterceptor01--postHandle()...
+   --MyInterceptor02--afterCompletion()...
+   --MyInterceptor01--afterCompletion()...
+2. 当myInterceptor01失效(return false;)，myInterceptor02生效时
+   --MyInterceptor01--preHandle()...
+3. 当myInterceptor01生效(return true;)，myInterceptor02失效(return false;)时
+   --MyInterceptor01--preHandle()...
+   --MyInterceptor02--preHandler()...
+   --MyInterceptor01--afterCompletion()...
+```

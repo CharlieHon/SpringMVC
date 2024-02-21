@@ -34,6 +34,46 @@
         <property name="basename" value="i18n"></property>
     </bean>
 
+    <!--配置文件上传需要的bean，id需要设置为multipartResolver-->
+    <bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="multipartResolver"/>
+
+    <!--配置自定义拦截器-spring配置文件-->
+    <mvc:interceptors>
+        <!--第一种配置方式
+        1. 直接使用ref引用到对应的MyInterceptor01
+        2. 这种方式会拦截所有的目标方法
+        -->
+        <!--<ref bean="myInterceptor01"/>-->
+
+        <!--第二种配置方式
+        1. mvc:mapping path="/hi" 指定要拦截的路径
+        2. <ref bean="myInterceptor01"/> 指定对哪个拦截器进行配置
+        -->
+        <!--<mvc:interceptor>-->
+        <!--    <mvc:mapping path="/hi"/>           -->
+        <!--    <ref bean="myInterceptor01"/>-->
+        <!--</mvc:interceptor>-->
+
+        <mvc:interceptor>
+            <!--第三种配置方式
+            1. mapping path="/h*" 通配符方式，表示拦截 /h 开头的路径
+            2. exclude-mapping path="/hi" 表示 /i 不会被拦截
+            -->
+            <mvc:mapping path="/h*"/>
+            <mvc:exclude-mapping path="/hello"/>
+            <ref bean="myInterceptor01"/>
+        </mvc:interceptor>
+
+        <!--配置多个拦截器
+        1. 配置第二个拦截器
+        2. 多个拦截器在执行时，是按照顺序执行的
+        -->
+        <mvc:interceptor>
+            <mvc:mapping path="/h*"/>
+            <ref bean="myInterceptor02"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
     <!--加入两个常规配置-->
     <!--支持SpringMVC的高级功能，比如JSR303校验，映射动态请求-->
     <mvc:annotation-driven/>
