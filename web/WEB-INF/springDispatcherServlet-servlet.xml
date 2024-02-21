@@ -74,6 +74,21 @@
         </mvc:interceptor>
     </mvc:interceptors>
 
+    <!--配置统一处理异常Bean-->
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <property name="exceptionMappings">
+            <props>
+                <!--
+                1. key指定异常的全类名
+                2. arrEx：指定异常捕获时跳转的页面
+                -->
+                <prop key="java.lang.ArrayIndexOutOfBoundsException">arrEx</prop>
+                <!--其它未知的异常，全部交由allEx处理-->
+                <prop key="java.lang.Exception">allEx</prop>
+            </props>
+        </property>
+    </bean>
+
     <!--加入两个常规配置-->
     <!--支持SpringMVC的高级功能，比如JSR303校验，映射动态请求-->
     <mvc:annotation-driven/>
