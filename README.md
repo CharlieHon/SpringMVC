@@ -7,13 +7,13 @@
 3. SpringMVC采用低耦合的组件设计方式，具有更好扩展和灵活性
 4. 支持 `REST` 格式的URL请求
 5. SpringMVC是基于Spring的，也就是SpringMVC是在Spring基础上的。SpringMVC的核心包 `spring-webmvc-xx.jar` 和 `spring-web-xx.jar`
-6. ![Spring和SpringMVC和SpringBoot的关系](img.png)
+6. ![Spring和SpringMVC和SpringBoot的关系](imgs/img.png)
 
 ## 快速入门
 
-1. ![SpringMVC登录流程分析](img_1.png)
+1. ![SpringMVC登录流程分析](imgs/img_1.png)
 2. 创建 `springmvc` web工程并配置 tomcat，导入SpringMVC开发需要jar包
-   - ![img_2.png](img_2.png)
+   - ![img_2.png](imgs/img_2.png)
 3. 创建 `src/applicationContext-mvc.xml` 文件，即Spring的容器文件。配置**要扫描的包**，以及**视图解析器**
 4. 配置 `WEB-INF/web.xml` ，配置**分发处理器**
 
@@ -131,7 +131,7 @@ public class UserServlet {
 
 ## 执行流程
 
-- ![SpringMVC执行流程](img_3.png)
+- ![SpringMVC执行流程](imgs/img_3.png)
 
 ## @RequestMapping
 
@@ -172,7 +172,7 @@ public class UserHandler {
 
 1. `@RequestMapping`可以指定请求的方式(`post/get/put/delete`)，请求的方式需要和指定的一样，否则报错
 2. `SpringMVC`控制器默认支持 `GET` 和 `POST` 两种方式，即当不指定 `method` 时，可以接收 `GET` 和 `POST` 请求
-3. ![img_4.png](img_4.png)
+3. ![img_4.png](imgs/img_4.png)
 
 ### 指定 params 和 headers 支持简单表达式
 
@@ -193,14 +193,14 @@ public class UserHandler {
 1. `params="bookId"`：表示请求必须包含名为 `bookId` 的请求参数
 2. `params!="param1"`：表示请求不能包含名为 `param1` 的请求参数
 3. `params = "bookId=100"`：表示请求包含名为 `bookId` 的请求参数，且其值必须为 `100`
-4. ![请求参数](img_5.png)
+4. ![请求参数](imgs/img_5.png)
 
 ### 支持Ant风格资源地址
 
 1. `?`：匹配文件名的一个字符
 2. `*`：匹配文件名中的任意字符
 3. `**`：匹配多层路径
-4. ![Ant风格的url地址举例](img_6.png)
+4. ![Ant风格的url地址举例](imgs/img_6.png)
 
 ```
  /*
@@ -250,17 +250,17 @@ public class UserHandler {
 ### 注意事项和使用细节
 
 1. 映射的url，不能重复
-   - ![映射的URL不能重复](img_7.png)
+   - ![映射的URL不能重复](imgs/img_7.png)
 2. 各种请求的简写形式，下面的 `value=` 也可以省略
-   - ![img_8.png](img_8.png)
+   - ![img_8.png](imgs/img_8.png)
 3. 当我们确定表单或者超链接会提交某个字段数据比如(email)时，要求提交的参数名和目标方法的参数名保持一致
-   - ![img_9.png](img_9.png)
+   - ![img_9.png](imgs/img_9.png)
 
 ## Postman(接口测试根据)
 
-| ![img_10.png](img_10.png) | ![img_11.png](img_11.png) | ![img_12.png](img_12.png) |
+| ![img_10.png](imgs/img_10.png) | ![img_11.png](imgs/img_11.png) | ![img_12.png](imgs/img_12.png) |
 |---------------------------|---------------------------|---------------------------|
-| ![img_13.png](img_13.png) | ![img_14.png](img_14.png) | ![img_15.png](img_15.png) |
+| ![img_13.png](imgs/img_13.png) | ![img_14.png](imgs/img_14.png) | ![img_15.png](imgs/img_15.png) |
 
 ## REST-优雅的url请求风格
 
@@ -272,7 +272,7 @@ public class UserHandler {
    4) DELETE用来删除资源
 3. 传统的url是通过**参数**来说明crud类型，rest是通过get/post/put/delete来说明crud的类型
 4. REST的核心过滤器 `HiddenHttpMethodFilter`
-   - ![img_16.png](img_16.png)
+   - ![img_16.png](imgs/img_16.png)
 
 ```xml
 <!--web.xml配置-->
@@ -423,7 +423,7 @@ public class BookHandler {  // 处理rest风格的请求-增删改查
 ### 注意事项和细节说明
 
 1. `HiddenHttpMethodFilter`在将post转成delete/put请求时，是按 `_method` 参数名来读取的
-2. ![img_17.png](img_17.png)
+2. ![img_17.png](imgs/img_17.png)
 
 ## SpringMVC映射请求数据
 
@@ -513,7 +513,7 @@ public class VoteHandler {
 
 1. 开发中，可能需要使用到原生的 `servlet api`
 2. 需要引入 `tomcat/lib` 下的 `servlet-api.jar`
-3. ![img_18.png](img_18.png)
+3. ![img_18.png](imgs/img_18.png)
 
 ```java
 @Controller
@@ -657,7 +657,7 @@ public class VoteHandler {
 1. 开发中，有时需要使用某个前置方法(比如`prepareXX()`)，给目标方法准备一个模型对象
 2. `@ModelAttribute`注解可以实现这样的需求
 3. 在某个方法上，增加了该注解后，在调用该Handler的任何一个方法时，都会先调用这个方法
-4. ![img_19.png](img_19.png)
+4. ![img_19.png](imgs/img_19.png)
 
 ```java
 @RequestMapping("/vote")
@@ -682,7 +682,7 @@ public class VoteHandler {
 1. 在 `SpringMVC` 中的目标方法中最终返回的都是一个**视图**(有各种视图)
 2. 返回的视图都会由一个**视图解析器**来处理(视图解析器有很多种)
 3. 在默认情况下，都是返回默认的视图，然后这个返回的视图交由SpringMVC的 `InterbalResourceViewResolver`视图处理器来处理的
-   - ![img_20.png](img_20.png)
+   - ![img_20.png](imgs/img_20.png)
 4. 在实际开发中，有时需要自定义视图，这样可以满足更多更复杂的需求
 
 ```xml
@@ -733,7 +733,7 @@ public class MyView extends AbstractView {
 3. 自定义视图处理器，使用 `BeanNameViewResolver`，这个视图处理器也需要配置到IOC容器
 4. `BeanNameViewResolver`的调用优先级需要设置一下，设置 `order` 比 `Integer.MAX_VALUE`小的值，以确保其在 `InternalResourceViewResolver`
    之前被调用
-5. ![自定义视图工作流程](img_21.png)
+5. ![自定义视图工作流程](imgs/img_21.png)
 6. 默认视图解析器一旦进行解析，即使没有找到相应资源，也不会再执行其它自定义解析器(优先级更低的)
 
 ### 指定请求转发或者重定向
@@ -779,7 +779,7 @@ public class GoodsHandler {
 > 说明：在提交数据(比如表单时)SpringMVC怎样对提交的数据进行转换和处理
 
 1. 基本数据类型可以和字符串之间自动完成转换，比如：SpringMVC上下文中内奸了很多转换器，可完成大多数java类型的转换工作
-2. ![img_22.png](img_22.png)
+2. ![img_22.png](imgs/img_22.png)
 
 ### 特殊数据类型和字符串
 
@@ -804,12 +804,12 @@ public class Monster {
 1. 对输入的数据(比如表单数据)，进行必要的验证，并给出相应的提示信息
 2. 对于验证表单数据，springmvc提供了很多使用的注解，这些注解由JSR303验证框架提供
 3. JSR303验证框架
-   - ![JSR303](img_23.png)
+   - ![JSR303](imgs/img_23.png)
 4. `Hibernate Validator`扩展注解
-   - ![Hibernate Validator](img_24.png)
+   - ![Hibernate Validator](imgs/img_24.png)
 5. 给Monster的字段加上数据验证的注解
-   - ![Monster](img_26.png)
-   - ![引入验证和国际化相关的jar包](img_25.png)
+   - ![Monster](imgs/img_26.png)
+   - ![引入验证和国际化相关的jar包](imgs/img_25.png)
 
 ```java
 package com.charlie.web.datavalid;
@@ -920,14 +920,14 @@ public class MonsterHandler {
 4. 需要使用 `<form:errors path="email"></form:errors>`标签来显示错误信息，这个标签需要写在`<form:form>`标签内生效
 5. 错误信息的国际化文件 `i18n.properties`，中文需要是`Unicode`编码，使用工具转码
 6. 格式：验证规则.表单(modelAttribute值).属性名=消息信息
-   - ![i18n.properties](img_27.png)
+   - ![i18n.properties](imgs/img_27.png)
 7. 注解 `@NotNull`和 `NotEmpty`的区别说明
-   - ![img_28.png](img_28.png)
+   - ![img_28.png](imgs/img_28.png)
 8. SpringMVC验证时，会根据不同的验证错误，返回对应的信息
 
 ### 注解的结合使用
 
-- ![先看一个问题](img_29.png)
+- ![先看一个问题](imgs/img_29.png)
 - 解决方法：将`@NotNull` + `@Range`组合使用
 
 ```java
@@ -973,9 +973,9 @@ public class Monster {
 
 - DataBinder工作机制
   - 通过反射机制对目标方法进行解析，将请求消息绑定到处理方法的入参中，数据绑定的核心部件是DataBinder，运行机制如下
-  - ![DataBinder工作机制](img_30.png)
+  - ![DataBinder工作机制](imgs/img_30.png)
 - Debug一下`validate`得到验证`errors`信息
-  - ![img_31.png](img_31.png)
+  - ![img_31.png](imgs/img_31.png)
 
 ### 取消某个属性的绑定
 
@@ -1016,7 +1016,7 @@ public class MonsterHandler {
 
 ### 自定义中文乱码过滤器
 
-- ![img_32.png](img_32.png)
+- ![img_32.png](imgs/img_32.png)
 
 ```xml
  <filter>
@@ -1076,8 +1076,8 @@ public class MyCharacterFilter implements Filter {
 
 ### 处理JSON-@ResponseBody
 
-- ![img_33.png](img_33.png)
-- ![img_34.png](img_34.png)
+- ![img_33.png](imgs/img_33.png)
+- ![img_34.png](imgs/img_34.png)
 
 ```html
 <html>
@@ -1252,7 +1252,7 @@ public class JsonHandler {
 ```
 
 使用Postman测试时，需要设置Header参数`Content-Type: application/json`
-- ![img_35.png](img_35.png)
+- ![img_35.png](imgs/img_35.png)
 
 ### 处理JSON-注意事项和细节
 
@@ -1262,7 +1262,7 @@ public class JsonHandler {
 
 ### HttpMessageConverter<T>
 
-- ![img_36.png](img_36.png)
+- ![img_36.png](imgs/img_36.png)
 
 > SpringMVC处理JSON底层实现是依靠 `HttpMessageConverter<T>` 来进行转换的
 > 1. 使用 `HttpMessageConverter<T>` 将请求信息转化并绑定到处理方法的入参中，或将响应结果转为对应类型的响应信息，Spring提供了两种途径
@@ -1271,7 +1271,7 @@ public class JsonHandler {
 > 2. 当控制器处理方法使用到`@RequestBody`/`@ResponseBody`或者`HttpEntity<T>`/`ResponseEntity<T>`时，Spring首先根据请求头或响应头的Accept属性选择
 >    匹配的`HttpMessageConverter`，进而根据参数类型或泛型类型的过滤得到匹配的`HttpMessageConverter`，若找不到可用的将报错
 
-| ![img_37.png](img_37.png) | ![img_38.png](img_38.png) |
+| ![img_37.png](imgs/img_37.png) | ![img_38.png](imgs/img_38.png) |
 |---------------------------|---------------------------|
 
 ```java
@@ -1428,7 +1428,7 @@ public class JsonHandler {
 }
 ```
 
-| ![img_39.png](img_39.png) | ![img_40.png](img_40.png) |
+| ![img_39.png](imgs/img_39.png) | ![img_40.png](imgs/img_40.png) |
 |---------------------------|---------------------------|
 
 ## SpringMVC文件上传
@@ -1499,7 +1499,7 @@ public class FileUploadHandler {
 
 ### 自定义拦截器执行流程图
 
-| ![img_41.png](img_41.png) | ![img_42.png](img_42.png) |
+| ![img_41.png](imgs/img_41.png) | ![img_42.png](imgs/img_42.png) |
 |---------------------------|---------------------------|
 
 ```java
@@ -1596,7 +1596,7 @@ public class MyInterceptor01 implements HandlerInterceptor {
 ### 注意事项和细节
 
 1. 默认配置所有的目标方法都会被拦截，也可以指定拦截目标方法，比如只拦截hi
-   - ![img_43.png](img_43.png)
+   - ![img_43.png](imgs/img_43.png)
 2. `mvc:mapping`支持通配符，同时可以指定不对哪些目标方法进行拦截
 3. 拦截器需要配置才生效，只通过`@Component`注解和实现`HandlerInterceptor`接口是不够的
 4. 如果`preHandler()`方法返回false，则不会执行目标方法，可以在这里根据业务需求指定跳转页面
@@ -1605,8 +1605,8 @@ public class MyInterceptor01 implements HandlerInterceptor {
 
 1. 当配置多个拦截器时，按照配置的顺序执行拦截，如果先配置`myInterceptor01`，再配置`myInterceptor02`
 2. 多个拦截器执行流程示意图
-   - ![img_44.png](img_44.png)
-   - ![img_45.png](img_45.png)
+   - ![img_44.png](imgs/img_44.png)
+   - ![img_45.png](imgs/img_45.png)
 
 ```java
 package com.charlie.web.interceptor;
@@ -1664,7 +1664,7 @@ public class MyInterceptor02 implements HandlerInterceptor {
 ### 基本介绍
 
 1. 默认异常交由tomcat处理，界面不友好
-   - ![img_46.png](img_46.png)
+   - ![img_46.png](imgs/img_46.png)
 2. SpringMVC通过`HandlerExceptionResolver`处理程序的异常，包括Handler映射、数据绑定以及目标方法执行时发生的异常
 3. 主要处理Handler中用 `@ExceptionHandler`注解定义的方法
 4. `ExceptionHandlerMethodResolver`内部若找不到 `@ExceptionHandler`注解的话，会找 `@ControllerAdvice`标注的类的
@@ -1837,3 +1837,12 @@ public class AgeException extends RuntimeException {
 ```
 
 > 异常处理优先级：局部异常 > 全局异常 > SimpleMappingExceptionResolver > tomcat默认机制
+
+## SpringMVC执行流程
+
+| ![img_47.png](imgs/img_47.png) |
+|---------------------------|
+
+| ![img_57.png](imgs/img_48.png) | ![img_58.png](imgs/img_49.png) | ![img_59.png](imgs/img_51.png) | ![img_60.png](imgs/img_52.png) |
+|---------------------------|---------------------------|---------------------------|---------------------------|
+| ![img_61.png](imgs/img_53.png) | ![img_62.png](imgs/img_54.png) | ![img_63.png](imgs/img_55.png) | ![img_64.png](imgs/img_56.png) |
